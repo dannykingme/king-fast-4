@@ -27,12 +27,41 @@ app.get("/users", (_req: Request, res: Response) => {
 });
 
 app.post("/users", (req: Request, res: Response) => {
-  const { name, email } = req.body;
+  const body = req.body;
+  const errors: Array<{
+    type: string;
+    loc: string[];
+    msg: string;
+    input: unknown;
+    url: string;
+  }> = [];
 
-  if (!name || !email) {
-    res.status(422).json({ detail: "name and email are required" });
+  if (body.name === undefined || body.name === null) {
+    errors.push({
+      type: "missing",
+      loc: ["body", "name"],
+      msg: "Field required",
+      input: body,
+      url: "https://errors.pydantic.dev/2.5/v/missing",
+    });
+  }
+
+  if (body.email === undefined || body.email === null) {
+    errors.push({
+      type: "missing",
+      loc: ["body", "email"],
+      msg: "Field required",
+      input: body,
+      url: "https://errors.pydantic.dev/2.5/v/missing",
+    });
+  }
+
+  if (errors.length > 0) {
+    res.status(422).json({ detail: errors });
     return;
   }
+
+  const { name, email } = body;
 
   const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
   if (existing) {
